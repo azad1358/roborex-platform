@@ -1,0 +1,41 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Environment
+.env
+.env.*
+
+# Docker data
+data/
+
+# Logs
+logs/
+*.log
+
+# Backups
+backups/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+tmp/
+.cache/
+
+# Generated AI content
+generated/
+
+# Local test files
+*.sqlite
+
+# Python build
+dist/
+build/
+*.egg-info/
