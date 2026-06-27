@@ -1,0 +1,1 @@
+"""ChatGPT image-generation adapter."""

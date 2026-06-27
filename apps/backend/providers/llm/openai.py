@@ -1,0 +1,1 @@
+"""OpenAI language-model adapter."""

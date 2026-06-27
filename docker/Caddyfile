@@ -34,5 +34,5 @@ storage.roborexacademy.com {
 }
 
 api.roborexacademy.com {
-    respond "API is running"
+    reverse_proxy localhost:8000
 }

@@ -6,6 +6,7 @@ __pycache__/
 # Environment
 .env
 .env.*
+!**/.env.example
 
 # Docker data
 data/
@@ -13,9 +14,15 @@ data/
 # Logs
 logs/
 *.log
+!logs/
+logs/*
+!logs/.gitkeep
 
 # Backups
 backups/
+!backups/
+backups/*
+!backups/.gitkeep
 
 # IDE
 .vscode/

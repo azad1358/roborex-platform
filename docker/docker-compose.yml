@@ -1,5 +1,23 @@
 services:
 
+  backend:
+    build:
+      context: ../apps/backend
+    container_name: roborex-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "127.0.0.1:8000:8000"
+    networks:
+      - ai-kids
+
   postgres:
     image: postgres:16
     container_name: postgres
