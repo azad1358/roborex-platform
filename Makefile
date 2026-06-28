@@ -1,4 +1,4 @@
-.PHONY: install run test lint migrate requirements up down
+.PHONY: install run test lint migrate requirements up down backup
 
 install:
 	uv sync
@@ -23,3 +23,6 @@ up:
 
 down:
 	docker compose --env-file docker/.env -f docker/docker-compose.yml down
+
+backup:
+	bash scripts/backup.sh

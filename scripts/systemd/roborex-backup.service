@@ -1,0 +1,11 @@
+[Unit]
+Description=roborex-platform off-site backup (PostgreSQL + MinIO)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# Runs as root so it can use root's rclone config and the Docker socket.
+User=root
+WorkingDirectory=/opt/roborex-platform
+ExecStart=/usr/bin/env bash /opt/roborex-platform/scripts/backup.sh
