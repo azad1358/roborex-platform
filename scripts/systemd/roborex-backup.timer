@@ -1,0 +1,10 @@
+[Unit]
+Description=Run roborex-platform backup on a schedule
+
+[Timer]
+# Daily at 03:30; runs on next boot if a scheduled run was missed.
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
