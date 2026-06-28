@@ -1,9 +1,115 @@
 name: CD
+
 on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: [main]
+    types: [completed]
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
 jobs:
   deploy:
+    name: Deploy to Hetzner
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    environment: production
+    env:
+      SSH_HOST: ${{ vars.HETZNER_SSH_HOST }}
+      SSH_USER: ${{ secrets.HETZNER_SSH_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.HETZNER_SSH_PRIVATE_KEY }}
+      SSH_KNOWN_HOSTS: ${{ secrets.HETZNER_KNOWN_HOSTS }}
+      DEPLOY_PATH: /opt/roborex-platform
+
     steps:
-      - uses: actions/checkout@v4
-      - run: echo "Add environment-specific deployment steps here."
+      - name: Check out tested revision
+        uses: actions/checkout@v4
+        with:
+          ref: >-
+            ${{ github.event_name == 'workflow_run'
+                && github.event.workflow_run.head_sha
+                || github.sha }}
+
+      - name: Validate deployment secrets
+        shell: bash
+        run: |
+          test -n "$SSH_HOST" || { echo "HETZNER_SSH_HOST is missing"; exit 1; }
+          test -n "$SSH_USER" || { echo "HETZNER_SSH_USER is missing"; exit 1; }
+          test -n "$SSH_PRIVATE_KEY" || { echo "HETZNER_SSH_PRIVATE_KEY is missing"; exit 1; }
+          test -n "$SSH_KNOWN_HOSTS" || { echo "HETZNER_KNOWN_HOSTS is missing"; exit 1; }
+
+      - name: Configure SSH
+        shell: bash
+        run: |
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/hetzner"
+          chmod 600 "$HOME/.ssh/hetzner"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Prepare deployment directory
+        run: |
+          ssh -i "$HOME/.ssh/hetzner" \
+            -o IdentitiesOnly=yes \
+            "$SSH_USER@$SSH_HOST" \
+            "mkdir -p '$DEPLOY_PATH'"
+
+      - name: Upload application
+        run: |
+          rsync -az --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.venv/' \
+            --exclude='__pycache__/' \
+            --exclude='*.pyc' \
+            --exclude='docker/.env' \
+            --exclude='tests/' \
+            --exclude='docs/' \
+            --exclude='backups/' \
+            --exclude='logs/' \
+            -e "ssh -i $HOME/.ssh/hetzner -o IdentitiesOnly=yes" \
+            ./ "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/"
+
+      - name: Deploy and verify
+        run: |
+          ssh -i "$HOME/.ssh/hetzner" \
+            -o IdentitiesOnly=yes \
+            "$SSH_USER@$SSH_HOST" \
+            "DEPLOY_PATH='$DEPLOY_PATH' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+          cd "$DEPLOY_PATH"
+
+          if [[ ! -f docker/.env ]]; then
+            echo "Missing $DEPLOY_PATH/docker/.env on the VM."
+            echo "Create it from docker/.env.example before deploying."
+            exit 1
+          fi
+
+          docker compose \
+            --env-file docker/.env \
+            -f docker/docker-compose.yml \
+            up -d --build --remove-orphans
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8000/api/v1/health >/dev/null; then
+              echo "Deployment is healthy."
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker compose \
+            --env-file docker/.env \
+            -f docker/docker-compose.yml \
+            ps
+          docker logs roborex-backend --tail 100
+          exit 1
+          REMOTE

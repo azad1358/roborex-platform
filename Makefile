@@ -1,22 +1,25 @@
-.PHONY: install run test lint migrate up down
+.PHONY: install run test lint migrate requirements up down
 
 install:
-	pip install -r apps/backend/requirements.txt
+	uv sync
 
 run:
-	uvicorn main:app --app-dir apps/backend --reload
+	uv run uvicorn main:app --app-dir apps/backend --reload
 
 test:
-	pytest
+	uv run pytest
 
 lint:
-	ruff check .
+	uv run ruff check .
 
 migrate:
-	cd apps/backend && alembic upgrade head
+	cd apps/backend && uv run --project ../.. alembic upgrade head
+
+requirements:
+	uv export --no-dev --no-hashes --output-file apps/backend/requirements.txt
 
 up:
-	docker compose -f docker/docker-compose.yml up -d --build
+	docker compose --env-file docker/.env -f docker/docker-compose.yml up -d --build
 
 down:
-	docker compose -f docker/docker-compose.yml down
+	docker compose --env-file docker/.env -f docker/docker-compose.yml down
