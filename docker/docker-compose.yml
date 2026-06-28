@@ -31,7 +31,7 @@ services:
     networks:
       - ai-kids
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -65,7 +65,7 @@ services:
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
 
     volumes:
-      - /opt/roborex-data/n8n:/home/node/.n8n
+      - n8n_data:/home/node/.n8n
 
     ports:
       - "127.0.0.1:5678:5678"
@@ -97,3 +97,6 @@ services:
 networks:
   ai-kids:
     driver: bridge
+
+volumes:
+  n8n_data:
