@@ -13,7 +13,19 @@ AI-powered educational content generation platform.
 
 ## Development
 
-Copy `docker/.env.example` to `docker/.env`, replace the placeholder secrets, then run:
+Install dependencies and create/update `.venv`:
+
+```sh
+uv sync
+```
+
+Run the backend locally:
+
+```sh
+uv run uvicorn main:app --app-dir apps/backend --reload
+```
+
+Copy `docker/.env.example` to `docker/.env`, replace the placeholder secrets, then start the full stack:
 
 ```sh
 make up

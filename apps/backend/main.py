@@ -12,5 +12,6 @@ for router in (
     character.router,
     prompt.router,
     job.router,
+
 ):
     app.include_router(router, prefix=settings.api_prefix)

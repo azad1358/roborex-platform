@@ -2,7 +2,8 @@ services:
 
   backend:
     build:
-      context: ../apps/backend
+      context: ..
+      dockerfile: apps/backend/Dockerfile
     container_name: roborex-backend
     restart: unless-stopped
     depends_on:
@@ -65,7 +66,7 @@ services:
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
 
     volumes:
-      - n8n_data:/home/node/.n8n
+      - /opt/roborex-data/n8n:/home/node/.n8n
 
     ports:
       - "127.0.0.1:5678:5678"
@@ -97,6 +98,3 @@ services:
 networks:
   ai-kids:
     driver: bridge
-
-volumes:
-  n8n_data:
